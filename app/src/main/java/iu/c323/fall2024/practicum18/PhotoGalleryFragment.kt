@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.provider.ContactsContract.Contacts.Photo
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
@@ -12,6 +13,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.appcompat.widget.SearchView
 import iu.c323.fall2024.practicum18.databinding.FragmentPhotoGalleryBinding
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
@@ -40,6 +42,22 @@ class PhotoGalleryFragment: Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        binding.toolbar.inflateMenu(R.menu.fragment_photo_gallery)
+        val searchItem: MenuItem = binding.toolbar.menu.findItem(R.id.menu_item_search)
+        val searchView = searchItem.actionView as? SearchView
+        searchView?.setOnQueryTextListener(object: SearchView.OnQueryTextListener{
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                Log.d(TAG, "QueryTextSubmit: $query")
+                photoGalleryViewModel.setQuery(query ?: "")
+                return true
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                Log.d(TAG, "QueryTextChanged: $newText")
+                return false
+            }
+        })
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.lifecycleScope.launch {
                 viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED){
@@ -48,6 +66,16 @@ class PhotoGalleryFragment: Fragment() {
                         binding.photoGrid.adapter = PhotoListAdapter(items)
                     }
                 }
+            }
+        }
+
+        binding.toolbar.setOnMenuItemClickListener(){
+            when(it.itemId){
+                R.id.menu_item_clear ->{
+                    photoGalleryViewModel.setQuery("")
+                    true
+                }
+                else -> false
             }
         }
     }
